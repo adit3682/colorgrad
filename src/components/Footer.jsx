@@ -1,3 +1,2 @@
-export default function Footer(){
-  return<footer id="tentang"><b>ColorGrad</b> membantu editor video memahami color grading, bukan sekadar menempel preset. Semua pemrosesan berjalan di browsermu. Palet film adalah pendekatan warna dominan, tanpa gambar atau cuplikan film. Asumsi: footage berformat Rec.709 (bukan Log).</footer>
-}
+import {useI18n} from '../i18n/index.jsx'
+export default function Footer(){const {t}=useI18n();return<footer id="tentang"><b>ColorGrad</b> {t('footer')}</footer>}

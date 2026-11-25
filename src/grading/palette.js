@@ -27,7 +27,7 @@ export function kmeans(d,k=5){
     rg=r}
   return rg.filter(a=>a[3]).map(a=>[a[0]/a[3],a[1]/a[3],a[2]/a[3]]).sort((a,b)=>lum(a)-lum(b))
 }
-const NAMA=['merah','kuning','hijau','cyan','biru','magenta']
+const NAMA=['red','yellow','green','cyan','blue','magenta']
 const warna=(x,y)=>NAMA[Math.round(((Math.atan2(y,x)*180/Math.PI+360)%360)/60)%6]
 // Terjemahkan palet film jadi posisi awal wheel + penjelasan
 export function refWheels(film,s){
@@ -37,7 +37,6 @@ export function refWheels(film,s){
     let x=(2*d[0]-d[1]-d[2])/3*s*1.5,yy=(d[1]-d[2])/1.732*s*1.5;const n=Math.hypot(x,yy)
     if(n>1){x/=n;yy/=n}
     wheels[k]={x,y:yy,m:0}
-    notes.push(n<.06?`${k} dibiarkan netral karena ${t} referensi hampir abu-abu.`
-      :`${k} menggeser ${t} ke arah ${warna(x,yy)}, mengikuti ${t} palet ${film.n}.`)})
+    notes.push({k,tone:t,color:n<.06?null:warna(x,yy),film:film.n})})
   return{wheels,notes,palette:p}
 }

@@ -1,6 +1,6 @@
 import {useEffect,useRef} from 'react'
 const S=120
-export default function ColorWheel({id,label,v,onChange}){
+export default function ColorWheel({id,label,brightLabel,v,onChange}){
   const c=useRef(),drag=useRef(false),D=window.devicePixelRatio||1
   useEffect(()=>{
     const x=c.current.getContext('2d'),R=S/2
@@ -20,7 +20,7 @@ export default function ColorWheel({id,label,v,onChange}){
       onPointerMove={e=>drag.current&&move(e)} onPointerUp={()=>{drag.current=false}}
       onDoubleClick={()=>onChange({...v,x:0,y:0})}/>
     <label>{label}</label>
-    <input type="range" min="-1" max="1" step=".01" value={v.m} aria-label={'Kecerahan '+label}
+    <input type="range" min="-1" max="1" step=".01" value={v.m} aria-label={brightLabel}
       onChange={e=>onChange({...v,m:+e.target.value})}/>
   </div>
 }
