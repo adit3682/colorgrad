@@ -6,7 +6,7 @@ import LatticeLoader from '../components/LatticeLoader.jsx'
 import FlexCarousel from '../components/FlexCarousel.jsx'
 import GlPreview from '../components/GlPreview.jsx'
 import {emptyW} from '../grading/grade.js'
-import {kmeans,hex,refWheels} from '../grading/palette.js'
+import {kmeans,hex,refWheels,toneStats,matchWheels} from '../grading/palette.js'
 import {buildCube} from '../grading/lut.js'
 import {useI18n} from '../i18n/index.jsx'
 const KEYS=['lift','gamma','gain']
@@ -24,29 +24,37 @@ export default function Studio(){
   const {t}=useI18n()
   const [frame,setFrame]=useState(null),[W,setW]=useState(emptyW()),[ref,setRef]=useState(-1),[str,setStr]=useState(60)
   const [split,setSplit]=useState(50),[fp,setFp]=useState([]),[notes,setNotes]=useState([]),[cube,setCube]=useState('')
-  const [loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[tab,setTab]=useState('capcut'),[over,setOver]=useState(false)
+  const [stats,setStats]=useState(null),[custom,setCustom]=useState(null),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[tab,setTab]=useState('capcut'),[over,setOver]=useState(false)
   const has=!!frame
   const load=src=>{setLoading(true);const im=new Image();im.onerror=()=>setLoading(false);im.onload=()=>setTimeout(()=>{
     const w=Math.min(960,im.width),h=Math.round(im.height*w/im.width),c=document.createElement('canvas')
     c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h)
-    setFp(kmeans(x.getImageData(0,0,w,h).data));setCube('');setFrame(c);setLoading(false)},30);im.src=src}
+    const dd=x.getImageData(0,0,w,h).data;setFp(kmeans(dd));setStats(toneStats(dd));setCube('');setFrame(c);setLoading(false)},30);im.src=src}
   const read=fl=>{if(!fl||!/^image\/(jpeg|png)$/.test(fl.type))return;const r=new FileReader();r.onload=()=>load(r.result);r.readAsDataURL(fl)}
-  useEffect(()=>{ // terapkan referensi
+  const refs=custom?[...films,{n:t('custom.item'),c:custom.hex,custom:true}]:films
+  useEffect(()=>{ // terapkan referensi (film atau foto sendiri)
     if(ref<0){setNotes([]);return}
-    const r=refWheels(films[ref],str/100*2.2);setW(w=>({...w,...r.wheels}));setNotes(r.notes)
-  },[ref,str])
+    const sv=str/100*2.2,r=refs[ref]?.custom?(stats&&matchWheels(stats,custom.stats,sv)):refWheels(films[ref],sv)
+    if(!r){setNotes([]);return}
+    setW(w=>({...w,...r.wheels}));setNotes(r.notes)
+  },[ref,str,custom,stats])
+  const kb=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.currentTarget.querySelector('input').click()}}
+  const loadRef=fl=>{if(!fl||!/^image\/(jpeg|png)$/.test(fl.type))return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+    const w=Math.min(480,im.width),h=Math.round(im.height*w/im.width),c=document.createElement('canvas');c.width=w;c.height=h
+    const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h);const dd=x.getImageData(0,0,w,h).data,pal=kmeans(dd)
+    setCustom({pal,hex:pal.map(hex),stats:toneStats(dd)});setRef(films.length)};im.src=r.result};r.readAsDataURL(fl)}
   const pickRef=n=>{setRef(n);if(n<0)setW(emptyW())}
   const reset=()=>{setRef(-1);setW(emptyW())}
   const exportLut=()=>{setBusy(true);setTimeout(()=>{setCube(buildCube(W));setBusy(false)},40)}
   const url=useMemo(()=>cube?URL.createObjectURL(new Blob([cube],{type:'text/plain'})):'',[cube])
-  const rp=ref>=0?refWheels(films[ref],0).palette:[]
-  const note=n=>n.color?t('note.shift',{k:n.k,tone:n.tone,color:t('color.'+n.color),film:n.film}):t('note.neutral',{k:n.k,tone:n.tone})
+  const rp=ref>=0?(refs[ref]?.custom?custom.pal:refWheels(films[ref],0).palette):[]
+  const note=n=>n.bright?t('note.bright',{k:n.k,tone:n.tone,dir:t(n.bright>0?'dir.up':'dir.down')}):n.color?t('note.shift',{k:n.k,tone:n.tone,color:t('color.'+n.color),film:n.custom?t('custom.name'):n.film}):t('note.neutral',{k:n.k,tone:n.tone})
   return<section id="studio">
     <div className="grid"><div><div className="panel">
       <div id="stage" onDragOver={e=>{e.preventDefault();setOver(true)}} onDragLeave={()=>setOver(false)}
         onDrop={e=>{e.preventDefault();setOver(false);read(e.dataTransfer.files[0])}}>
         {!has&&!loading&&<div id="drop" className={over?'on':''}><p>{t('drop.text')}</p>
-          <label className="btn" tabIndex="0">{t('drop.pick')}<input type="file" accept="image/jpeg,image/png" hidden onChange={e=>read(e.target.files[0])}/></label>{' '}
+          <label className="btn" tabIndex="0" onKeyDown={kb}>{t('drop.pick')}<input type="file" accept="image/jpeg,image/png" hidden onChange={e=>read(e.target.files[0])}/></label>{' '}
           <button className="btn alt" onClick={()=>load(demoImage())}>{t('drop.demo')}</button></div>}
         {frame&&<GlPreview source={frame} W={W} split={split}/>}
         {loading&&<div className="ov"><LatticeLoader/><span>{t('loading')}</span></div>}
@@ -56,10 +64,12 @@ export default function Studio(){
       <p className="note">{t('calib')}</p>
       {has&&<div className="strips" style={{display:'block'}}>
         <div className="lab">{t('pal.frame')}</div><Strip cols={fp}/>
-        <div className="lab">{ref>=0?t('pal.ref',{film:films[ref].n}):t('pal.none')}</div>{ref>=0&&<Strip cols={rp}/>}</div>}
+        <div className="lab">{ref>=0?t('pal.ref',{film:refs[ref].n}):t('pal.none')}</div>{ref>=0&&<Strip cols={rp}/>}</div>}
     </div></div>
     <div className="panel"><h3>{t('refs.title')}</h3>
-      <GlideSelect label={t('refs.title')} items={films} value={ref} onChange={pickRef} noneLabel={t('ref.none')}/>
+      <GlideSelect label={t('refs.title')} items={refs} value={ref} onChange={pickRef} noneLabel={t('ref.none')}/>
+      <label className="btn alt" tabIndex="0" onKeyDown={kb} style={{display:'block',textAlign:'center',marginTop:10}}>{t('custom.upload')}<input type="file" accept="image/jpeg,image/png" hidden onChange={e=>loadRef(e.target.files[0])}/></label>
+      <p className="note">{t('custom.note')}</p>{refs[ref]?.custom&&!has&&<p className="note">{t('custom.need')}</p>}
       <label className="lab" htmlFor="str" style={{display:'block',marginTop:12}}>{t('str',{v:str})}</label>
       <input id="str" type="range" min="0" max="100" value={str} onChange={e=>setStr(+e.target.value)} style={{width:'100%',accentColor:'var(--lime)'}}/>
       <h3 style={{marginTop:18}}>{t('wheels')}</h3>

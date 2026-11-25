@@ -64,5 +64,13 @@
  "carousel.h": "Contoh look",
  "carousel.ph": "Gambar contoh",
  "carousel.use": "Pakai look ini",
- "loading": "Membaca gambar…"
+ "loading": "Membaca gambar…",
+ "custom.upload": "Unggah foto referensi sendiri",
+ "custom.item": "Foto referensimu",
+ "custom.name": "foto referensi",
+ "custom.note": "Yang diambil hanya kecenderungan warna di shadows, midtones, dan highlights, lalu dibandingkan dengan frame-mu. Foto tidak diunggah ke server.",
+ "custom.need": "Unggah frame dulu agar foto referensi bisa dibandingkan.",
+ "note.bright": "{k} {dir} {tone} supaya kecerahannya mendekati foto referensi.",
+ "dir.up": "menaikkan",
+ "dir.down": "menurunkan"
 }

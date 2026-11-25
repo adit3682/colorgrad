@@ -40,3 +40,26 @@ export function refWheels(film,s){
     notes.push({k,tone:t,color:n<.06?null:warna(x,yy),film:film.n})})
   return{wheels,notes,palette:p}
 }
+
+// Rata-rata warna di tiga kelompok kecerahan (shadows, midtones, highlights; dibagi per sepertiga piksel)
+export function toneStats(d){
+  const px=[],st=Math.max(1,Math.floor(d.length/16000))
+  for(let i=0;i<d.length;i+=4*st)px.push([d[i],d[i+1],d[i+2]])
+  const ls=px.map(lum).sort((a,b)=>a-b),a=ls[Math.floor(ls.length/3)],b=ls[Math.floor(ls.length*2/3)]
+  const s=[[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+  px.forEach(p=>{const l=lum(p),g=l<a?0:l<b?1:2;s[g][0]+=p[0];s[g][1]+=p[1];s[g][2]+=p[2];s[g][3]++})
+  return s.map(x=>x[3]?[x[0]/x[3],x[1]/x[3],x[2]/x[3]]:[128,128,128])
+}
+// Bandingkan frame pengguna (fr) dengan foto referensi (rf): selisih warna dan kecerahan per kelompok -> posisi wheel
+export function matchWheels(fr,rf,s){
+  const wheels={},notes=[],ch=c=>{const y=lum(c);return c.map(v=>(v-y)/255)}
+  ;[['lift','shadows'],['gamma','midtones'],['gain','highlights']].forEach(([k,tone],i)=>{
+    const a=ch(fr[i]),b=ch(rf[i]),d=b.map((v,j)=>v-a[j])
+    let x=(2*d[0]-d[1]-d[2])/3*s*1.5,y=(d[1]-d[2])/1.732*s*1.5;const n=Math.hypot(x,y)
+    if(n>1){x/=n;y/=n}
+    const dl=(lum(rf[i])-lum(fr[i]))/255,m=Math.max(-1,Math.min(1,dl*1.5*s))
+    wheels[k]={x,y,m}
+    notes.push({k,tone,color:n<.06?null:warna(x,y),custom:true})
+    if(Math.abs(m)>.1)notes.push({k,tone,bright:m>0?1:-1})})
+  return{wheels,notes}
+}

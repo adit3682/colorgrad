@@ -64,5 +64,13 @@
  "carousel.h": "Example looks",
  "carousel.ph": "Sample image",
  "carousel.use": "Use this look",
- "loading": "Reading image…"
+ "loading": "Reading image…",
+ "custom.upload": "Upload your own reference photo",
+ "custom.item": "Your reference photo",
+ "custom.name": "reference photo",
+ "custom.note": "Only the color tendencies in the shadows, midtones, and highlights are taken, then compared with your frame. The photo is never uploaded to a server.",
+ "custom.need": "Upload a frame first so the reference photo can be compared.",
+ "note.bright": "{k} {dir} the {tone} so their brightness gets closer to the reference photo.",
+ "dir.up": "raises",
+ "dir.down": "lowers"
 }
